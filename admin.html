@@ -3,275 +3,427 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bất Phàm TV — Quản lý</title>
+<title>Bất Phàm TV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#14141c; --card:#1e1e2c; --card2:#232335;
-    --jade:#3f9c76; --jade-soft:#2b6650;
-    --vermillion:#c23b34; --vermillion-soft:#7a2622;
-    --parchment:#ede6d6; --muted:#8f899e; --line:#2c2c3d;
+    --bg:#14141c;
+    --bg-alt:#1b1b26;
+    --card:#20202f;
+    --jade:#3f9c76;
+    --jade-soft:#2b6650;
+    --vermillion:#c23b34;
+    --parchment:#ede6d6;
+    --muted:#8f899e;
+    --line:#2c2c3d;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--parchment);font-family:'Be Vietnam Pro',sans-serif;min-height:100vh;}
-  input,textarea{
-    font-family:inherit;background:var(--card2);border:1px solid var(--line);
-    color:var(--parchment);padding:10px 12px;border-radius:6px;width:100%;font-size:14px;
+  body{
+    background:var(--bg);
+    color:var(--parchment);
+    font-family:'Be Vietnam Pro',sans-serif;
+    min-height:100vh;
   }
-  input:focus,textarea:focus{outline:none;border-color:var(--jade);}
-  button{font-family:inherit;cursor:pointer;border:none;border-radius:6px;font-size:14px;font-weight:600;}
-  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
+  ::selection{background:var(--vermillion);color:#fff;}
 
-  /* Login */
-  #login-view{
-    min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;padding:20px;
+  header{
+    padding:64px 24px 48px;
+    text-align:center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(63,156,118,0.14), transparent 60%),
+      var(--bg);
+    border-bottom:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
   }
-  .brand{font-family:'Ma Shan Zheng',cursive;font-size:40px;}
+  header::before{
+    content:"卷";
+    position:absolute;
+    font-family:'Ma Shan Zheng',cursive;
+    font-size:280px;
+    color:rgba(194,59,52,0.05);
+    top:-60px;
+    right:-20px;
+    line-height:1;
+    pointer-events:none;
+  }
+  .brand{
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:clamp(36px,7vw,56px);
+    color:var(--parchment);
+    letter-spacing:0.5px;
+  }
   .brand span{color:var(--vermillion);}
-  #login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;}
-  #login-form button{background:var(--jade-soft);color:#fff;padding:12px;}
-  #login-form button:hover{background:var(--jade);}
-  #login-error{color:var(--vermillion);font-size:13px;text-align:center;display:none;}
-
-  /* Dashboard */
-  #app-view{display:none;max-width:900px;margin:0 auto;padding:30px 20px 80px;}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
-  .topbar .brand{font-size:26px;}
-  #logout-btn{background:none;color:var(--muted);font-weight:500;text-decoration:underline;}
-
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px;}
-  .panel h2{font-size:15px;margin-bottom:14px;color:var(--parchment);}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-  .form-row.full{grid-template-columns:1fr;}
-  .panel button.primary{background:var(--jade-soft);color:#fff;padding:10px 16px;margin-top:6px;}
-  .panel button.primary:hover{background:var(--jade);}
-
-  .series-item{
-    border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--card2);
+  .tagline{
+    margin-top:10px;
+    color:var(--muted);
+    font-size:14px;
+    letter-spacing:0.5px;
   }
-  .series-item .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
-  .series-item h3{font-size:15px;}
-  .series-item .desc{font-size:12px;color:var(--muted);margin-top:4px;}
-  .row-actions{display:flex;gap:8px;flex-shrink:0;}
-  .row-actions button{background:none;color:var(--muted);font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;}
-  .row-actions button.danger:hover{color:var(--vermillion);border-color:var(--vermillion-soft);}
-  .row-actions button:hover{color:var(--parchment);}
-
-  .ep-row{
-    display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;font-size:13px;
+  .seal-rule{
+    display:flex;align-items:center;gap:12px;
+    justify-content:center;
+    margin-top:22px;
   }
-  .ep-row .num{
-    width:22px;height:22px;border-radius:50%;background:var(--vermillion-soft);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;
+  .seal-rule .line{width:40px;height:1px;background:var(--line);}
+  .seal-rule .dot{width:6px;height:6px;border-radius:50%;background:var(--jade);}
+
+  main{max-width:1080px;margin:0 auto;padding:40px 20px 100px;}
+
+  #loading, #empty{
+    text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;
   }
-  .ep-row .title{flex:1;color:var(--parchment);}
-  .ep-row .url{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;}
-  .toggle-eps{margin-top:10px;background:none;color:var(--jade);font-size:12px;padding:0;text-decoration:underline;}
 
-  .add-ep-form{display:grid;grid-template-columns:60px 1fr 1.4fr auto;gap:6px;margin-top:10px;}
-  .add-ep-form button{background:var(--jade-soft);color:#fff;padding:0 14px;}
-  .add-ep-form button:hover{background:var(--jade);}
+  .search-wrap{
+    max-width:420px;
+    margin:0 auto 32px;
+    position:relative;
+  }
+  .search-wrap input{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--line);
+    color:var(--parchment);
+    font-family:'Be Vietnam Pro',sans-serif;
+    font-size:14px;
+    padding:12px 16px 12px 40px;
+    border-radius:100px;
+    outline:none;
+    transition:border-color .2s ease;
+  }
+  .search-wrap input::placeholder{color:var(--muted);}
+  .search-wrap input:focus{border-color:var(--jade);}
+  .search-wrap .icon{
+    position:absolute;left:15px;top:50%;transform:translateY(-50%);
+    color:var(--muted);font-size:14px;pointer-events:none;
+  }
+  #no-results{
+    display:none;text-align:center;color:var(--muted);padding:40px 20px;font-size:13px;
+  }
 
-  .empty-note{color:var(--muted);font-size:13px;text-align:center;padding:20px;}
-  .status-msg{font-size:12px;color:var(--jade);margin-top:8px;display:none;}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(128px,150px));
+    justify-content:center;
+    gap:16px;
+  }
+
+  .scroll-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    position:relative;
+  }
+  .scroll-card:hover{
+    transform:translateY(-4px) scaleY(1.015);
+    box-shadow:0 16px 32px rgba(0,0,0,0.4);
+    border-color:var(--jade-soft);
+  }
+  .scroll-cover{
+    aspect-ratio:3/4;
+    background:linear-gradient(160deg,#2a2a3d,#1b1b26);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .scroll-cover img{width:100%;height:100%;object-fit:cover;}
+  .scroll-cover .glyph{
+    font-family:'Ma Shan Zheng',cursive;
+    font-size:56px;
+    color:rgba(237,230,214,0.15);
+  }
+  .status-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10px;font-weight:700;letter-spacing:0.3px;
+    padding:4px 10px;border-radius:100px;
+    background:rgba(0,0,0,0.55);
+    backdrop-filter:blur(2px);
+  }
+  .status-badge .dot{
+    width:7px;height:7px;border-radius:50%;
+    animation:pulse-glow 1.8s ease-in-out infinite;
+  }
+  .status-done{color:#5fd3a0;}
+  .status-done .dot{background:var(--jade);box-shadow:0 0 8px 2px var(--jade);}
+  .status-updating{color:#f0c05a;}
+  .status-updating .dot{background:#e0a83d;box-shadow:0 0 8px 2px #e0a83d;}
+  .status-stopped{color:#f0847d;}
+  .status-stopped .dot{background:var(--vermillion);box-shadow:0 0 8px 2px var(--vermillion);}
+  @keyframes pulse-glow{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  @media (prefers-reduced-motion:reduce){
+    .status-badge .dot{animation:none;}
+  }
+  .status-badge-pos{position:absolute;top:8px;left:8px;}
+
+  .player-status{margin-bottom:10px;}
+
+  .ep-badge{
+    position:absolute;top:8px;right:8px;
+    background:var(--vermillion);
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:100px;
+    letter-spacing:0.3px;
+  }
+  .scroll-info{padding:12px 14px 16px;}
+  .scroll-info .code{
+    font-size:10px;
+    color:var(--jade);
+    font-weight:700;
+    letter-spacing:0.5px;
+    margin-bottom:3px;
+  }
+  .scroll-info h3{
+    font-size:14px;
+    font-weight:600;
+    line-height:1.35;
+    color:var(--parchment);
+  }
+  .scroll-info p{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--muted);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  /* ---- Player view ---- */
+  #player-view{display:none;}
+  .back-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:none;border:none;color:var(--muted);
+    font-family:inherit;font-size:14px;cursor:pointer;
+    padding:8px 0;margin-bottom:20px;
+  }
+  .back-btn:hover{color:var(--parchment);}
+
+  .player-title{
+    font-family:'Ma Shan Zheng',cursive;
+    font-size:32px;
+    color:var(--parchment);
+    margin-bottom:6px;
+  }
+  .player-desc{color:var(--muted);font-size:13px;margin-bottom:24px;max-width:640px;}
+
+  video{
+    width:100%;
+    max-height:70vh;
+    background:#000;
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+
+  .ep-list{
+    margin-top:24px;
+    display:flex;flex-wrap:wrap;gap:10px;
+  }
+  .ep-pill{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:100px;
+    cursor:pointer;
+    font-size:13px;
+    color:var(--muted);
+    transition:all .2s ease;
+  }
+  .ep-pill .num{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--jade-soft);
+    color:var(--parchment);
+    font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ep-pill:hover{border-color:var(--jade);color:var(--parchment);}
+  .ep-pill.active{
+    background:var(--jade-soft);
+    border-color:var(--jade);
+    color:#fff;
+  }
+  .ep-pill.active .num{background:var(--vermillion);}
+
+  footer{
+    text-align:center;padding:30px;color:var(--muted);font-size:12px;
+    border-top:1px solid var(--line);
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .scroll-card{transition:none;}
+  }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-view">
+<header>
   <div class="brand">Bất Phàm <span>TV</span></div>
-  <form id="login-form">
-    <div>
-      <label>Email</label>
-      <input type="email" id="login-email" required>
-    </div>
-    <div>
-      <label>Mật khẩu</label>
-      <input type="password" id="login-password" required>
-    </div>
-    <button type="submit">Đăng nhập</button>
-    <div id="login-error"></div>
-  </form>
-</div>
+  <div class="tagline">Vietsub truyện tranh hoạt hình Trung Quốc — xem trọn bộ, không cần tìm kiếm</div>
+  <div class="seal-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+</header>
 
-<!-- DASHBOARD -->
-<div id="app-view">
-  <div class="topbar">
-    <div class="brand">Quản lý</div>
-    <button id="logout-btn">Đăng xuất</button>
+<main>
+  <div id="library-view">
+    <div class="search-wrap">
+      <span class="icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Nhập tên hoặc mã phim" oninput="filterSeries()">
+    </div>
+    <div id="loading">Đang tải danh sách phim...</div>
+    <div id="empty" style="display:none;">Chưa có bộ phim nào được đăng.</div>
+    <div id="no-results">Không tìm thấy phim phù hợp.</div>
+    <div class="grid" id="grid"></div>
   </div>
 
-  <div class="panel">
-    <h2>Thêm bộ phim mới</h2>
-    <div class="form-row full">
-      <input type="text" id="new-series-title" placeholder="Tên bộ phim / truyện">
-    </div>
-    <div class="form-row full">
-      <input type="text" id="new-series-desc" placeholder="Mô tả ngắn (không bắt buộc)">
-    </div>
-    <div class="form-row full">
-      <input type="text" id="new-series-cover" placeholder="Link ảnh bìa (không bắt buộc)">
-    </div>
-    <button class="primary" onclick="addSeries()">+ Thêm bộ phim</button>
-    <div class="status-msg" id="series-status"></div>
+  <div id="player-view">
+    <button class="back-btn" onclick="backToLibrary()">← Quay lại danh sách</button>
+    <div class="player-title" id="player-title"></div>
+    <div class="player-status" id="player-status"></div>
+    <div class="player-desc" id="player-desc"></div>
+    <video id="video" controls playsinline></video>
+    <div class="ep-list" id="ep-list"></div>
   </div>
+</main>
 
-  <div class="panel">
-    <h2>Danh sách bộ phim</h2>
-    <div id="series-list"><div class="empty-note">Đang tải...</div></div>
-  </div>
-</div>
+<footer>© Bất Phàm TV — nội dung vietsub từ TikTok, tổng hợp để xem liền mạch</footer>
 
 <script>
   const SUPABASE_URL = "https://qaddfutlbvlzeklbiaad.supabase.co";
   const SUPABASE_KEY = "sb_publishable_x2yfVfz3agesn97XPFXUeQ_YEVHp-VV";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const loginView = document.getElementById('login-view');
-  const appView = document.getElementById('app-view');
+  const grid = document.getElementById('grid');
+  const loadingEl = document.getElementById('loading');
+  const emptyEl = document.getElementById('empty');
+  let seriesData = [];
 
-  // ---- Auth ----
-  document.getElementById('login-form').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const errEl = document.getElementById('login-error');
-    errEl.style.display='none';
-    const { error } = await sb.auth.signInWithPassword({ email, password });
+  async function loadLibrary(){
+    const { data: series, error } = await sb.from('series').select('*').order('created_at', {ascending:false});
+    loadingEl.style.display = 'none';
     if(error){
-      errEl.textContent = 'Sai email hoặc mật khẩu.';
-      errEl.style.display='block';
+      emptyEl.textContent = 'Có lỗi khi tải dữ liệu. Thử tải lại trang.';
+      emptyEl.style.display='block';
+      console.error(error);
       return;
     }
-    showApp();
-  });
+    if(!series || series.length === 0){
+      emptyEl.style.display = 'block';
+      return;
+    }
+    seriesData = series;
 
-  document.getElementById('logout-btn').addEventListener('click', async ()=>{
-    await sb.auth.signOut();
-    location.reload();
-  });
+    // lấy số tập cho từng series
+    const { data: episodes } = await sb.from('episodes').select('series_id');
+    countMap = {};
+    (episodes||[]).forEach(e=>{ countMap[e.series_id] = (countMap[e.series_id]||0)+1; });
 
-  async function checkSession(){
-    const { data } = await sb.auth.getSession();
-    if(data.session){ showApp(); }
-    else { loginView.style.display='flex'; appView.style.display='none'; }
+    renderGrid(seriesData);
   }
 
-  function showApp(){
-    loginView.style.display='none';
-    appView.style.display='block';
-    loadSeriesList();
+  let countMap = {};
+
+  const STATUS_LABEL = { done:'Đã xong', updating:'Đang cập nhật', stopped:'Ngưng cập nhật' };
+  function statusBadgeHtml(status, extraClass){
+    const s = status || 'updating';
+    const label = STATUS_LABEL[s] || STATUS_LABEL.updating;
+    return `<div class="status-badge status-${s} ${extraClass||''}"><span class="dot"></span>${label}</div>`;
   }
 
-  // ---- Series CRUD ----
-  async function addSeries(){
-    const title = document.getElementById('new-series-title').value.trim();
-    const description = document.getElementById('new-series-desc').value.trim();
-    const cover_url = document.getElementById('new-series-cover').value.trim();
-    if(!title){ alert('Cần nhập tên bộ phim.'); return; }
-    const { error } = await sb.from('series').insert({ title, description: description||null, cover_url: cover_url||null });
-    if(error){ alert('Lỗi: ' + error.message); return; }
-    document.getElementById('new-series-title').value='';
-    document.getElementById('new-series-desc').value='';
-    document.getElementById('new-series-cover').value='';
-    const statusEl = document.getElementById('series-status');
-    statusEl.textContent = 'Đã thêm!';
-    statusEl.style.display='block';
-    setTimeout(()=>statusEl.style.display='none', 1500);
-    loadSeriesList();
-  }
-
-  async function deleteSeries(id){
-    if(!confirm('Xóa bộ phim này? Toàn bộ tập bên trong cũng sẽ bị xóa.')) return;
-    const { error } = await sb.from('series').delete().eq('id', id);
-    if(error){ alert('Lỗi: ' + error.message); return; }
-    loadSeriesList();
-  }
-
-  async function loadSeriesList(){
-    const listEl = document.getElementById('series-list');
-    const { data: series, error } = await sb.from('series').select('*').order('created_at', {ascending:false});
-    if(error){ listEl.innerHTML = `<div class="empty-note">Lỗi tải dữ liệu.</div>`; return; }
-    if(!series || series.length===0){ listEl.innerHTML = `<div class="empty-note">Chưa có bộ phim nào.</div>`; return; }
-
-    listEl.innerHTML = series.map(s => `
-      <div class="series-item" id="series-${s.id}">
-        <div class="head">
-          <div>
-            <h3>${escapeHtml(s.title)}</h3>
-            ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ''}
-          </div>
-          <div class="row-actions">
-            <button onclick="deleteSeries('${s.id}')" class="danger">Xóa bộ</button>
-          </div>
+  function renderGrid(list){
+    const noResults = document.getElementById('no-results');
+    if(list.length === 0){
+      grid.innerHTML = '';
+      noResults.style.display = 'block';
+      return;
+    }
+    noResults.style.display = 'none';
+    grid.innerHTML = list.map(s => `
+      <div class="scroll-card" onclick="openSeries('${s.id}')">
+        <div class="scroll-cover">
+          ${s.cover_url ? `<img src="${escapeAttr(s.cover_url)}" alt="">` : `<div class="glyph">卷</div>`}
+          ${statusBadgeHtml(s.status, 'status-badge-pos')}
+          <div class="ep-badge">${countMap[s.id]||0} tập</div>
         </div>
-        <button class="toggle-eps" onclick="toggleEpisodes('${s.id}')">Xem / thêm tập ▾</button>
-        <div id="eps-${s.id}" style="display:none;">
-          <div id="eps-list-${s.id}"></div>
-          <div class="add-ep-form">
-            <input type="number" placeholder="Số" id="ep-num-${s.id}" min="1">
-            <input type="text" placeholder="Tên tập (không bắt buộc)" id="ep-title-${s.id}">
-            <input type="text" placeholder="Link video (catbox)" id="ep-url-${s.id}">
-            <button onclick="addEpisode('${s.id}')">+ Thêm</button>
-          </div>
+        <div class="scroll-info">
+          ${s.code ? `<div class="code">${escapeHtml(s.code)}</div>` : ''}
+          <h3>${escapeHtml(s.title)}</h3>
+          ${s.description ? `<p>${escapeHtml(s.description)}</p>` : ''}
         </div>
       </div>
     `).join('');
   }
 
-  async function toggleEpisodes(seriesId){
-    const box = document.getElementById('eps-'+seriesId);
-    const isHidden = box.style.display === 'none';
-    box.style.display = isHidden ? 'block' : 'none';
-    if(isHidden) loadEpisodes(seriesId);
+  function removeDiacritics(str){
+    return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
   }
 
-  async function loadEpisodes(seriesId){
-    const box = document.getElementById('eps-list-'+seriesId);
-    box.innerHTML = 'Đang tải...';
-    const { data: episodes, error } = await sb.from('episodes').select('*').eq('series_id', seriesId).order('episode_number', {ascending:true});
-    if(error){ box.innerHTML = 'Lỗi tải tập.'; return; }
-    if(!episodes || episodes.length===0){ box.innerHTML = '<div class="empty-note">Chưa có tập nào.</div>'; return; }
-    box.innerHTML = episodes.map(e => `
-      <div class="ep-row">
-        <div class="num">${e.episode_number}</div>
-        <div class="title">${e.title ? escapeHtml(e.title) : 'Tập ' + e.episode_number}</div>
-        <div class="url">${escapeHtml(e.video_url)}</div>
-        <button onclick="deleteEpisode('${e.id}','${seriesId}')" style="background:none;color:var(--muted);border:1px solid var(--line);border-radius:5px;font-size:11px;padding:4px 8px;">Xóa</button>
+  function filterSeries(){
+    const q = removeDiacritics(document.getElementById('search-input').value.trim());
+    if(!q){ renderGrid(seriesData); return; }
+    const filtered = seriesData.filter(s =>
+      removeDiacritics(s.title).includes(q) || removeDiacritics(s.code).includes(q)
+    );
+    renderGrid(filtered);
+  }
+
+  async function openSeries(seriesId){
+    const s = seriesData.find(x=>x.id===seriesId);
+    const { data: episodes, error } = await sb.from('episodes')
+      .select('*').eq('series_id', seriesId).order('episode_number', {ascending:true});
+    if(error || !episodes || episodes.length===0){
+      alert('Bộ này chưa có tập nào.');
+      return;
+    }
+
+    document.getElementById('library-view').style.display='none';
+    document.getElementById('player-view').style.display='block';
+    document.getElementById('player-title').textContent = s.title;
+    document.getElementById('player-status').innerHTML = statusBadgeHtml(s.status);
+    document.getElementById('player-desc').textContent = s.description || '';
+
+    const epList = document.getElementById('ep-list');
+    epList.innerHTML = episodes.map((e,i)=>`
+      <div class="ep-pill" data-idx="${i}" onclick="playEpisode(${JSON.stringify(episodes).replace(/"/g,'&quot;')}, ${i})">
+        <span class="num">${e.episode_number}</span>
+        <span>${e.title ? escapeHtml(e.title) : 'Tập ' + e.episode_number}</span>
       </div>
     `).join('');
+
+    playEpisode(episodes, 0);
+    window.scrollTo({top:0, behavior:'smooth'});
   }
 
-  async function addEpisode(seriesId){
-    const num = document.getElementById('ep-num-'+seriesId).value;
-    const title = document.getElementById('ep-title-'+seriesId).value.trim();
-    const url = document.getElementById('ep-url-'+seriesId).value.trim();
-    if(!num || !url){ alert('Cần nhập số tập và link video.'); return; }
-    const { error } = await sb.from('episodes').insert({
-      series_id: seriesId, episode_number: parseInt(num), title: title||null, video_url: url
+  function playEpisode(episodes, idx){
+    const e = episodes[idx];
+    const video = document.getElementById('video');
+    video.src = e.video_url;
+    video.play().catch(()=>{});
+    document.querySelectorAll('.ep-pill').forEach((el,i)=>{
+      el.classList.toggle('active', i===idx);
     });
-    if(error){ alert('Lỗi: ' + error.message); return; }
-    document.getElementById('ep-num-'+seriesId).value='';
-    document.getElementById('ep-title-'+seriesId).value='';
-    document.getElementById('ep-url-'+seriesId).value='';
-    loadEpisodes(seriesId);
   }
 
-  async function deleteEpisode(epId, seriesId){
-    if(!confirm('Xóa tập này?')) return;
-    const { error } = await sb.from('episodes').delete().eq('id', epId);
-    if(error){ alert('Lỗi: ' + error.message); return; }
-    loadEpisodes(seriesId);
+  function backToLibrary(){
+    document.getElementById('video').pause();
+    document.getElementById('player-view').style.display='none';
+    document.getElementById('library-view').style.display='block';
   }
 
   function escapeHtml(str){
     return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
+  function escapeAttr(str){ return escapeHtml(str); }
 
-  checkSession();
+  loadLibrary();
 </script>
 </body>
 </html>
