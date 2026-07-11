@@ -158,7 +158,15 @@
 <script>
   const SUPABASE_URL = "https://qaddfutlbvlzeklbiaad.supabase.co";
   const SUPABASE_KEY = "sb_publishable_x2yfVfz3agesn97XPFXUeQ_YEVHp-VV";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storage: window.localStorage,
+      storageKey: 'batphamtv-admin-auth'
+    }
+  });
 
   const loginView = document.getElementById('login-view');
   const appView = document.getElementById('app-view');
