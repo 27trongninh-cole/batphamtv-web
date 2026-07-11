@@ -253,6 +253,29 @@
   }
   .ep-pill.active .num{background:var(--vermillion);}
 
+  #toast{
+    position:fixed;
+    bottom:24px;left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--card);
+    border:1px solid var(--jade-soft);
+    color:var(--parchment);
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:13px;
+    box-shadow:0 12px 28px rgba(0,0,0,0.5);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:100;
+    max-width:90vw;
+    text-align:center;
+  }
+  #toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
   footer{
     text-align:center;padding:30px;color:var(--muted);font-size:12px;
     border-top:1px solid var(--line);
@@ -294,6 +317,7 @@
 </main>
 
 <footer>© Bất Phàm TV — nội dung vietsub từ TikTok, tổng hợp để xem liền mạch</footer>
+<div id="toast"></div>
 
 <script>
   const SUPABASE_URL = "https://qaddfutlbvlzeklbiaad.supabase.co";
@@ -374,12 +398,21 @@
     renderGrid(filtered);
   }
 
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
   async function openSeries(seriesId){
     const s = seriesData.find(x=>x.id===seriesId);
     const { data: episodes, error } = await sb.from('episodes')
       .select('*').eq('series_id', seriesId).order('episode_number', {ascending:true});
     if(error || !episodes || episodes.length===0){
-      alert('Bộ này chưa có tập nào.');
+      showToast('Bộ này chưa có tập nào, quay lại sau nhé!');
       return;
     }
 
