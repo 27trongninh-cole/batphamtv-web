@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bất Phàm TV — Quản lý</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#14141c; --card:#1e1e2c; --card2:#232335;
+    --jade:#3f9c76; --jade-soft:#2b6650;
+    --vermillion:#c23b34; --vermillion-soft:#7a2622;
+    --parchment:#ede6d6; --muted:#8f899e; --line:#2c2c3d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--parchment);font-family:'Be Vietnam Pro',sans-serif;min-height:100vh;}
+  input,textarea{
+    font-family:inherit;background:var(--card2);border:1px solid var(--line);
+    color:var(--parchment);padding:10px 12px;border-radius:6px;width:100%;font-size:14px;
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--jade);}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:6px;font-size:14px;font-weight:600;}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
+
+  /* Login */
+  #login-view{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;padding:20px;
+  }
+  .brand{font-family:'Ma Shan Zheng',cursive;font-size:40px;}
+  .brand span{color:var(--vermillion);}
+  #login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;}
+  #login-form button{background:var(--jade-soft);color:#fff;padding:12px;}
+  #login-form button:hover{background:var(--jade);}
+  #login-error{color:var(--vermillion);font-size:13px;text-align:center;display:none;}
+
+  /* Dashboard */
+  #app-view{display:none;max-width:900px;margin:0 auto;padding:30px 20px 80px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
+  .topbar .brand{font-size:26px;}
+  #logout-btn{background:none;color:var(--muted);font-weight:500;text-decoration:underline;}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px;}
+  .panel h2{font-size:15px;margin-bottom:14px;color:var(--parchment);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-row.full{grid-template-columns:1fr;}
+  .panel button.primary{background:var(--jade-soft);color:#fff;padding:10px 16px;margin-top:6px;}
+  .panel button.primary:hover{background:var(--jade);}
+
+  .series-item{
+    border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--card2);
+  }
+  .series-item .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .series-item h3{font-size:15px;}
+  .series-item .desc{font-size:12px;color:var(--muted);margin-top:4px;}
+  .row-actions{display:flex;gap:8px;flex-shrink:0;}
+  .row-actions button{background:none;color:var(--muted);font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;}
+  .row-actions button.danger:hover{color:var(--vermillion);border-color:var(--vermillion-soft);}
+  .row-actions button:hover{color:var(--parchment);}
+
+  .ep-row{
+    display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;font-size:13px;
+  }
+  .ep-row .num{
+    width:22px;height:22px;border-radius:50%;background:var(--vermillion-soft);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;
+  }
+  .ep-row .title{flex:1;color:var(--parchment);}
+  .ep-row .url{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;}
+  .toggle-eps{margin-top:10px;background:none;color:var(--jade);font-size:12px;padding:0;text-decoration:underline;}
+
+  .add-ep-form{display:grid;grid-template-columns:60px 1fr 1.4fr auto;gap:6px;margin-top:10px;}
+  .add-ep-form button{background:var(--jade-soft);color:#fff;padding:0 14px;}
+  .add-ep-form button:hover{background:var(--jade);}
+
+  .empty-note{color:var(--muted);font-size:13px;text-align:center;padding:20px;}
+  .status-msg{font-size:12px;color:var(--jade);margin-top:8px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <div class="brand">Bất Phàm <span>TV</span></div>
+  <form id="login-form">
+    <div>
+      <label>Email</label>
+      <input type="email" id="login-email" required>
+    </div>
+    <div>
+      <label>Mật khẩu</label>
+      <input type="password" id="login-password" required>
+    </div>
+    <button type="submit">Đăng nhập</button>
+    <div id="login-error"></div>
+  </form>
+</div>
+
+<!-- DASHBOARD -->
+<div id="app-view">
+  <div class="topbar">
+    <div class="brand">Quản lý</div>
+    <button id="logout-btn">Đăng xuất</button>
+  </div>
+
+  <div class="panel">
+    <h2>Thêm bộ phim mới</h2>
+    <div class="form-row full">
+      <input type="text" id="new-series-title" placeholder="Tên bộ phim / truyện">
+    </div>
+    <div class="form-row full">
+      <input type="text" id="new-series-desc" placeholder="Mô tả ngắn (không bắt buộc)">
+    </div>
+    <div class="form-row full">
+      <input type="text" id="new-series-cover" placeholder="Link ảnh bìa (không bắt buộc)">
+    </div>
+    <button class="primary" onclick="addSeries()">+ Thêm bộ phim</button>
+    <div class="status-msg" id="series-status"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Danh sách bộ phim</h2>
+    <div id="series-list"><div class="empty-note">Đang tải...</div></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://qaddfutlbvlzeklbiaad.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_x2yfVfz3agesn97XPFXUeQ_YEVHp-VV";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginView = document.getElementById('login-view');
+  const appView = document.getElementById('app-view');
+
+  // ---- Auth ----
+  document.getElementById('login-form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.style.display='none';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      errEl.textContent = 'Sai email hoặc mật khẩu.';
+      errEl.style.display='block';
+      return;
+    }
+    showApp();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async ()=>{
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  async function checkSession(){
+    const { data } = await sb.auth.getSession();
+    if(data.session){ showApp(); }
+    else { loginView.style.display='flex'; appView.style.display='none'; }
+  }
+
+  function showApp(){
+    loginView.style.display='none';
+    appView.style.display='block';
+    loadSeriesList();
+  }
+
+  // ---- Series CRUD ----
+  async function addSeries(){
+    const title = document.getElementById('new-series-title').value.trim();
+    const description = document.getElementById('new-series-desc').value.trim();
+    const cover_url = document.getElementById('new-series-cover').value.trim();
+    if(!title){ alert('Cần nhập tên bộ phim.'); return; }
+    const { error } = await sb.from('series').insert({ title, description: description||null, cover_url: cover_url||null });
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    document.getElementById('new-series-title').value='';
+    document.getElementById('new-series-desc').value='';
+    document.getElementById('new-series-cover').value='';
+    const statusEl = document.getElementById('series-status');
+    statusEl.textContent = 'Đã thêm!';
+    statusEl.style.display='block';
+    setTimeout(()=>statusEl.style.display='none', 1500);
+    loadSeriesList();
+  }
+
+  async function deleteSeries(id){
+    if(!confirm('Xóa bộ phim này? Toàn bộ tập bên trong cũng sẽ bị xóa.')) return;
+    const { error } = await sb.from('series').delete().eq('id', id);
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    loadSeriesList();
+  }
+
+  async function loadSeriesList(){
+    const listEl = document.getElementById('series-list');
+    const { data: series, error } = await sb.from('series').select('*').order('created_at', {ascending:false});
+    if(error){ listEl.innerHTML = `<div class="empty-note">Lỗi tải dữ liệu.</div>`; return; }
+    if(!series || series.length===0){ listEl.innerHTML = `<div class="empty-note">Chưa có bộ phim nào.</div>`; return; }
+
+    listEl.innerHTML = series.map(s => `
+      <div class="series-item" id="series-${s.id}">
+        <div class="head">
+          <div>
+            <h3>${escapeHtml(s.title)}</h3>
+            ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ''}
+          </div>
+          <div class="row-actions">
+            <button onclick="deleteSeries('${s.id}')" class="danger">Xóa bộ</button>
+          </div>
+        </div>
+        <button class="toggle-eps" onclick="toggleEpisodes('${s.id}')">Xem / thêm tập ▾</button>
+        <div id="eps-${s.id}" style="display:none;">
+          <div id="eps-list-${s.id}"></div>
+          <div class="add-ep-form">
+            <input type="number" placeholder="Số" id="ep-num-${s.id}" min="1">
+            <input type="text" placeholder="Tên tập (không bắt buộc)" id="ep-title-${s.id}">
+            <input type="text" placeholder="Link video (catbox)" id="ep-url-${s.id}">
+            <button onclick="addEpisode('${s.id}')">+ Thêm</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function toggleEpisodes(seriesId){
+    const box = document.getElementById('eps-'+seriesId);
+    const isHidden = box.style.display === 'none';
+    box.style.display = isHidden ? 'block' : 'none';
+    if(isHidden) loadEpisodes(seriesId);
+  }
+
+  async function loadEpisodes(seriesId){
+    const box = document.getElementById('eps-list-'+seriesId);
+    box.innerHTML = 'Đang tải...';
+    const { data: episodes, error } = await sb.from('episodes').select('*').eq('series_id', seriesId).order('episode_number', {ascending:true});
+    if(error){ box.innerHTML = 'Lỗi tải tập.'; return; }
+    if(!episodes || episodes.length===0){ box.innerHTML = '<div class="empty-note">Chưa có tập nào.</div>'; return; }
+    box.innerHTML = episodes.map(e => `
+      <div class="ep-row">
+        <div class="num">${e.episode_number}</div>
+        <div class="title">${e.title ? escapeHtml(e.title) : 'Tập ' + e.episode_number}</div>
+        <div class="url">${escapeHtml(e.video_url)}</div>
+        <button onclick="deleteEpisode('${e.id}','${seriesId}')" style="background:none;color:var(--muted);border:1px solid var(--line);border-radius:5px;font-size:11px;padding:4px 8px;">Xóa</button>
+      </div>
+    `).join('');
+  }
+
+  async function addEpisode(seriesId){
+    const num = document.getElementById('ep-num-'+seriesId).value;
+    const title = document.getElementById('ep-title-'+seriesId).value.trim();
+    const url = document.getElementById('ep-url-'+seriesId).value.trim();
+    if(!num || !url){ alert('Cần nhập số tập và link video.'); return; }
+    const { error } = await sb.from('episodes').insert({
+      series_id: seriesId, episode_number: parseInt(num), title: title||null, video_url: url
+    });
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    document.getElementById('ep-num-'+seriesId).value='';
+    document.getElementById('ep-title-'+seriesId).value='';
+    document.getElementById('ep-url-'+seriesId).value='';
+    loadEpisodes(seriesId);
+  }
+
+  async function deleteEpisode(epId, seriesId){
+    if(!confirm('Xóa tập này?')) return;
+    const { error } = await sb.from('episodes').delete().eq('id', epId);
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    loadEpisodes(seriesId);
+  }
+
+  function escapeHtml(str){
+    return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  checkSession();
+</script>
+</body>
+</html>
