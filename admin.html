@@ -41,6 +41,30 @@
   .status-select{
     width:auto;font-size:11px;padding:5px 8px;margin-top:6px;
   }
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+  }
+  .stat-box{
+    background:var(--card2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    text-align:center;
+  }
+  .stat-num{
+    font-size:26px;
+    font-weight:700;
+    color:var(--jade);
+  }
+  .stat-label{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:4px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+  }
   label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
 
   /* Login */
@@ -124,6 +148,28 @@
   </div>
 
   <div class="panel">
+    <h2>Lượt truy cập trang</h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-day">–</div>
+        <div class="stat-label">Hôm nay</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-week">–</div>
+        <div class="stat-label">7 ngày qua</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-month">–</div>
+        <div class="stat-label">30 ngày qua</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-total">–</div>
+        <div class="stat-label">Tổng cộng</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Thêm bộ phim mới</h2>
     <div class="form-row full" style="font-size:12px;color:var(--muted);margin-bottom:12px;">
       Mã phim sẽ tự động tạo theo dạng <strong style="color:var(--jade);">BP001, BP002...</strong>
@@ -202,6 +248,26 @@
     loginView.style.display='none';
     appView.style.display='block';
     loadSeriesList();
+    loadStats();
+  }
+
+  async function loadStats(){
+    const now = new Date();
+    const startOfDay = new Date(now); startOfDay.setHours(0,0,0,0);
+    const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate()-7);
+    const startOfMonth = new Date(now); startOfMonth.setDate(now.getDate()-30);
+
+    const [dayRes, weekRes, monthRes, totalRes] = await Promise.all([
+      sb.from('page_views').select('*', {count:'exact', head:true}).gte('created_at', startOfDay.toISOString()),
+      sb.from('page_views').select('*', {count:'exact', head:true}).gte('created_at', startOfWeek.toISOString()),
+      sb.from('page_views').select('*', {count:'exact', head:true}).gte('created_at', startOfMonth.toISOString()),
+      sb.from('page_views').select('*', {count:'exact', head:true}),
+    ]);
+
+    document.getElementById('stat-day').textContent = dayRes.count ?? '–';
+    document.getElementById('stat-week').textContent = weekRes.count ?? '–';
+    document.getElementById('stat-month').textContent = monthRes.count ?? '–';
+    document.getElementById('stat-total').textContent = totalRes.count ?? '–';
   }
 
   // ---- Series CRUD ----
