@@ -574,6 +574,9 @@
   }
   function escapeAttr(str){ return escapeHtml(str); }
 
+  // Ghi nhận lượt truy cập (không chặn tải trang, bỏ qua nếu lỗi)
+  sb.from('page_views').insert({}).then(()=>{}).catch(()=>{});
+
   loadLibrary();
 </script>
 </body>
