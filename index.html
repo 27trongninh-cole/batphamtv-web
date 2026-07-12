@@ -207,12 +207,21 @@
     letter-spacing:0.3px;
   }
   .scroll-info{padding:12px 14px 16px;}
+  .scroll-info .code-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:3px;
+  }
   .scroll-info .code{
     font-size:10px;
     color:var(--jade);
     font-weight:700;
     letter-spacing:0.5px;
-    margin-bottom:3px;
+  }
+  .scroll-info .views{
+    font-size:10px;
+    color:var(--muted);
   }
   .scroll-info h3{
     font-size:14px;
@@ -543,7 +552,10 @@
           <div class="ep-badge">${countMap[s.id]||0} tập</div>
         </div>
         <div class="scroll-info">
-          ${s.code ? `<div class="code">${escapeHtml(s.code)}</div>` : ''}
+          <div class="code-row">
+            ${s.code ? `<span class="code">${escapeHtml(s.code)}</span>` : ''}
+            <span class="views">👁 ${s.views||0}</span>
+          </div>
           <h3>${escapeHtml(s.title)}</h3>
           ${s.description ? `<p>${escapeHtml(s.description)}</p>` : ''}
         </div>
@@ -591,6 +603,10 @@
     document.getElementById('player-status').innerHTML = statusBadgeHtml(s.status);
     document.getElementById('player-desc').textContent = s.description || '';
 
+    // Ghi nhận lượt xem (click mở bộ phim), không chặn giao diện
+    s.views = (s.views||0) + 1;
+    sb.from('series').update({ views: s.views }).eq('id', seriesId).then(()=>{}).catch(()=>{});
+
     const epList = document.getElementById('ep-list');
     epList.innerHTML = episodes.map((e,i)=>`
       <div class="ep-pill" data-idx="${i}" onclick="playEpisode(${JSON.stringify(episodes).replace(/"/g,'&quot;')}, ${i})">
@@ -610,7 +626,7 @@
     return m + ':' + String(s).padStart(2,'0');
   }
 
-  function renderPlayer(url){
+  function renderPlayer(url, episodes, idx){
     const container = document.getElementById('player-container');
     const ccBar = document.getElementById('custom-controls');
     const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -619,16 +635,16 @@
       container.innerHTML = `<iframe class="player-frame" src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay" allowfullscreen frameborder="0"></iframe>`;
       ccBar.style.display = 'none';
     } else {
-      container.innerHTML = `<video id="video" playsinline autoplay></video>`;
+      container.innerHTML = `<video id="video" playsinline></video>`;
       const video = document.getElementById('video');
       video.src = url;
-      video.play().catch(()=>{});
       ccBar.style.display = 'flex';
-      setupCustomControls(video);
+      setupCustomControls(video, episodes, idx);
+      video.play().catch(()=>{});
     }
   }
 
-  function setupCustomControls(video){
+  function setupCustomControls(video, episodes, idx){
     const playBtn = document.getElementById('cc-playpause');
     const timeEl = document.getElementById('cc-time');
     const seek = document.getElementById('cc-seek');
@@ -650,7 +666,9 @@
       iconVolOff.classList.toggle('hidden', !video.muted);
     }
 
-    updatePlayIcon();
+    // Video chưa play, icon mặc định là "phát" cho tới khi sự kiện onplay thật sự bắn ra
+    iconPlay.classList.remove('hidden');
+    iconPause.classList.add('hidden');
     updateVolIcon();
 
     playBtn.onclick = ()=>{
@@ -681,11 +699,18 @@
       if(video.requestFullscreen) video.requestFullscreen();
       else if(video.webkitEnterFullscreen) video.webkitEnterFullscreen();
     };
+
+    // Tự chuyển sang tập kế tiếp khi hết tập hiện tại
+    video.onended = ()=>{
+      if(episodes && idx+1 < episodes.length){
+        playEpisode(episodes, idx+1);
+      }
+    };
   }
 
   function playEpisode(episodes, idx){
     const e = episodes[idx];
-    renderPlayer(e.video_url);
+    renderPlayer(e.video_url, episodes, idx);
     document.querySelectorAll('.ep-pill').forEach((el,i)=>{
       el.classList.toggle('active', i===idx);
     });
