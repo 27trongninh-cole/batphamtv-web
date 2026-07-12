@@ -295,26 +295,34 @@
   .custom-controls{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     background:var(--bg-alt);
     border:1px solid var(--line);
     border-radius:10px;
-    padding:8px 12px;
+    padding:6px 10px;
     margin-top:8px;
+    width:100%;
+    box-sizing:border-box;
   }
   .cc-btn{
     background:none;border:none;color:var(--parchment);
-    font-size:16px;cursor:pointer;padding:4px 6px;
-    flex-shrink:0;line-height:1;
-    transition:color .2s ease;
+    cursor:pointer;
+    flex-shrink:0;
+    width:30px;height:30px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:6px;
+    transition:color .2s ease, background .2s ease;
   }
-  .cc-btn:hover{color:var(--jade);}
+  .cc-btn:hover{color:var(--jade);background:rgba(63,156,118,0.12);}
+  .cc-btn svg{display:block;flex-shrink:0;}
+  .cc-btn .hidden{display:none;}
   .cc-time{
     font-size:11px;color:var(--muted);
     flex-shrink:0;min-width:76px;font-variant-numeric:tabular-nums;
   }
   .cc-seek{
     flex:1;
+    min-width:0;
     -webkit-appearance:none;
     appearance:none;
     height:4px;
@@ -435,11 +443,19 @@
       <div class="player-desc" id="player-desc"></div>
       <div id="player-container" style="margin-top:16px;"></div>
       <div class="custom-controls" id="custom-controls" style="display:none;">
-        <button id="cc-playpause" class="cc-btn">▶</button>
+        <button id="cc-playpause" class="cc-btn" aria-label="Phát/Dừng">
+          <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="icon-pause hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+        </button>
         <span id="cc-time" class="cc-time">0:00 / 0:00</span>
         <input type="range" id="cc-seek" class="cc-seek" min="0" max="100" value="0" step="0.1">
-        <button id="cc-mute" class="cc-btn">🔊</button>
-        <button id="cc-fullscreen" class="cc-btn">⛶</button>
+        <button id="cc-mute" class="cc-btn" aria-label="Âm thanh">
+          <svg class="icon-vol-on" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3z"/><path d="M16.5 12a4.5 4.5 0 0 0-2.3-3.9v7.8a4.5 4.5 0 0 0 2.3-3.9z"/></svg>
+          <svg class="icon-vol-off hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3z"/><path d="M19 9l-3 3m0-3l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <button id="cc-fullscreen" class="cc-btn" aria-label="Toàn màn hình">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
       </div>
       <div class="ep-list-label">Danh sách tập</div>
       <div class="ep-list" id="ep-list"></div>
@@ -618,15 +634,30 @@
     const seek = document.getElementById('cc-seek');
     const muteBtn = document.getElementById('cc-mute');
     const fsBtn = document.getElementById('cc-fullscreen');
+    const iconPlay = playBtn.querySelector('.icon-play');
+    const iconPause = playBtn.querySelector('.icon-pause');
+    const iconVolOn = muteBtn.querySelector('.icon-vol-on');
+    const iconVolOff = muteBtn.querySelector('.icon-vol-off');
     let seeking = false;
 
-    playBtn.textContent = '⏸';
+    function updatePlayIcon(){
+      const playing = !video.paused;
+      iconPlay.classList.toggle('hidden', playing);
+      iconPause.classList.toggle('hidden', !playing);
+    }
+    function updateVolIcon(){
+      iconVolOn.classList.toggle('hidden', video.muted);
+      iconVolOff.classList.toggle('hidden', !video.muted);
+    }
+
+    updatePlayIcon();
+    updateVolIcon();
 
     playBtn.onclick = ()=>{
       if(video.paused){ video.play(); } else { video.pause(); }
     };
-    video.onplay = ()=>{ playBtn.textContent = '⏸'; };
-    video.onpause = ()=>{ playBtn.textContent = '▶'; };
+    video.onplay = updatePlayIcon;
+    video.onpause = updatePlayIcon;
 
     video.onloadedmetadata = ()=>{
       seek.max = video.duration || 0;
@@ -641,10 +672,9 @@
     seek.oninput = ()=>{ seeking = true; timeEl.textContent = formatTime(seek.value) + ' / ' + formatTime(video.duration); };
     seek.onchange = ()=>{ video.currentTime = seek.value; seeking = false; };
 
-    muteBtn.textContent = video.muted ? '🔇' : '🔊';
     muteBtn.onclick = ()=>{
       video.muted = !video.muted;
-      muteBtn.textContent = video.muted ? '🔇' : '🔊';
+      updateVolIcon();
     };
 
     fsBtn.onclick = ()=>{
