@@ -574,10 +574,13 @@
   }
   function escapeAttr(str){ return escapeHtml(str); }
 
-  // Ghi nhận lượt truy cập (không chặn tải trang, bỏ qua nếu lỗi)
-  sb.from('page_views').insert({}).then(()=>{}).catch(()=>{});
+  // Ghi nhận lượt truy cập, trừ thiết bị đã từng đăng nhập admin
+  if(localStorage.getItem('bptv_skip_tracking') !== '1'){
+    sb.from('page_views').insert({}).then(()=>{}).catch(()=>{});
+  }
 
   loadLibrary();
 </script>
 </body>
 </html>
+ 
