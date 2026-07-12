@@ -245,27 +245,19 @@
     loadSeriesList();
   }
 
+  let seriesCache = [];
+
   async function loadSeriesList(){
     const listEl = document.getElementById('series-list');
     const { data: series, error } = await sb.from('series').select('*').order('created_at', {ascending:false});
     if(error){ listEl.innerHTML = `<div class="empty-note">Lỗi tải dữ liệu.</div>`; return; }
     if(!series || series.length===0){ listEl.innerHTML = `<div class="empty-note">Chưa có bộ phim nào.</div>`; return; }
+    seriesCache = series;
 
     listEl.innerHTML = series.map(s => `
       <div class="series-item" id="series-${s.id}">
-        <div class="head">
-          <div>
-            <h3>${s.code ? `<span style="color:var(--jade);font-size:12px;margin-right:6px;">${escapeHtml(s.code)}</span>` : ''}${escapeHtml(s.title)}</h3>
-            ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ''}
-            <select class="status-select status-${s.status||'updating'}" onchange="updateStatus('${s.id}', this.value)">
-              <option value="updating" ${s.status==='updating'?'selected':''}>🟡 Đang cập nhật</option>
-              <option value="done" ${s.status==='done'?'selected':''}>🟢 Đã xong</option>
-              <option value="stopped" ${s.status==='stopped'?'selected':''}>🔴 Ngưng cập nhật</option>
-            </select>
-          </div>
-          <div class="row-actions">
-            <button onclick="deleteSeries('${s.id}')" class="danger">Xóa bộ</button>
-          </div>
+        <div class="head" id="series-head-${s.id}">
+          ${seriesHeadHtml(s)}
         </div>
         <button class="toggle-eps" onclick="toggleEpisodes('${s.id}')">Xem / thêm tập ▾</button>
         <div id="eps-${s.id}" style="display:none;">
@@ -273,12 +265,62 @@
           <div class="add-ep-form">
             <input type="number" placeholder="Số" id="ep-num-${s.id}" min="1">
             <input type="text" placeholder="Tên tập (không bắt buộc)" id="ep-title-${s.id}">
-            <input type="text" placeholder="Link video (catbox)" id="ep-url-${s.id}">
+            <input type="text" placeholder="Link video (catbox hoặc Google Drive)" id="ep-url-${s.id}">
             <button onclick="addEpisode('${s.id}')">+ Thêm</button>
           </div>
         </div>
       </div>
     `).join('');
+  }
+
+  function seriesHeadHtml(s){
+    return `
+      <div style="flex:1;">
+        <h3>${s.code ? `<span style="color:var(--jade);font-size:12px;margin-right:6px;">${escapeHtml(s.code)}</span>` : ''}${escapeHtml(s.title)}</h3>
+        ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ''}
+        <select class="status-select status-${s.status||'updating'}" onchange="updateStatus('${s.id}', this.value)">
+          <option value="updating" ${s.status==='updating'?'selected':''}>🟡 Đang cập nhật</option>
+          <option value="done" ${s.status==='done'?'selected':''}>🟢 Đã xong</option>
+          <option value="stopped" ${s.status==='stopped'?'selected':''}>🔴 Ngưng cập nhật</option>
+        </select>
+      </div>
+      <div class="row-actions">
+        <button onclick="startEditSeries('${s.id}')">Sửa</button>
+        <button onclick="deleteSeries('${s.id}')" class="danger">Xóa bộ</button>
+      </div>
+    `;
+  }
+
+  function startEditSeries(seriesId){
+    const s = seriesCache.find(x=>x.id===seriesId);
+    if(!s) return;
+    const head = document.getElementById('series-head-'+seriesId);
+    head.innerHTML = `
+      <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+        <input type="text" class="edit-title" placeholder="Tên bộ phim">
+        <input type="text" class="edit-desc" placeholder="Mô tả ngắn">
+        <input type="text" class="edit-cover" placeholder="Link ảnh bìa">
+        <div style="display:flex;gap:8px;">
+          <button class="save-btn" style="background:var(--jade-soft);color:#fff;padding:8px 16px;border-radius:6px;">Lưu</button>
+          <button class="cancel-btn" style="background:none;color:var(--muted);border:1px solid var(--line);padding:8px 16px;border-radius:6px;">Hủy</button>
+        </div>
+      </div>
+    `;
+    head.querySelector('.edit-title').value = s.title || '';
+    head.querySelector('.edit-desc').value = s.description || '';
+    head.querySelector('.edit-cover').value = s.cover_url || '';
+    head.querySelector('.save-btn').onclick = ()=>saveSeriesEdit(seriesId, head);
+    head.querySelector('.cancel-btn').onclick = ()=>loadSeriesList();
+  }
+
+  async function saveSeriesEdit(seriesId, head){
+    const title = head.querySelector('.edit-title').value.trim();
+    const description = head.querySelector('.edit-desc').value.trim();
+    const cover_url = head.querySelector('.edit-cover').value.trim();
+    if(!title){ alert('Cần nhập tên bộ phim.'); return; }
+    const { error } = await sb.from('series').update({ title, description: description||null, cover_url: cover_url||null }).eq('id', seriesId);
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    loadSeriesList();
   }
 
   async function toggleEpisodes(seriesId){
@@ -288,20 +330,53 @@
     if(isHidden) loadEpisodes(seriesId);
   }
 
+  let episodesCache = {};
+
   async function loadEpisodes(seriesId){
     const box = document.getElementById('eps-list-'+seriesId);
     box.innerHTML = 'Đang tải...';
     const { data: episodes, error } = await sb.from('episodes').select('*').eq('series_id', seriesId).order('episode_number', {ascending:true});
     if(error){ box.innerHTML = 'Lỗi tải tập.'; return; }
     if(!episodes || episodes.length===0){ box.innerHTML = '<div class="empty-note">Chưa có tập nào.</div>'; return; }
+    episodesCache[seriesId] = episodes;
     box.innerHTML = episodes.map(e => `
-      <div class="ep-row">
+      <div class="ep-row" id="ep-row-${e.id}">
         <div class="num">${e.episode_number}</div>
         <div class="title">${e.title ? escapeHtml(e.title) : 'Tập ' + e.episode_number}</div>
         <div class="url">${escapeHtml(e.video_url)}</div>
+        <button onclick="startEditEpisode('${seriesId}','${e.id}')" style="background:none;color:var(--muted);border:1px solid var(--line);border-radius:5px;font-size:11px;padding:4px 8px;">Sửa</button>
         <button onclick="deleteEpisode('${e.id}','${seriesId}')" style="background:none;color:var(--muted);border:1px solid var(--line);border-radius:5px;font-size:11px;padding:4px 8px;">Xóa</button>
       </div>
     `).join('');
+  }
+
+  function startEditEpisode(seriesId, epId){
+    const e = (episodesCache[seriesId]||[]).find(x=>x.id===epId);
+    if(!e) return;
+    const row = document.getElementById('ep-row-'+epId);
+    row.innerHTML = `
+      <input type="number" class="edit-num" style="width:55px;flex-shrink:0;">
+      <input type="text" class="edit-title" placeholder="Tên tập" style="flex:1;">
+      <input type="text" class="edit-url" placeholder="Link video" style="flex:1.6;">
+      <button class="save-btn" style="background:var(--jade-soft);color:#fff;border:none;border-radius:5px;font-size:11px;padding:5px 10px;">Lưu</button>
+      <button class="cancel-btn" style="background:none;color:var(--muted);border:1px solid var(--line);border-radius:5px;font-size:11px;padding:5px 10px;">Hủy</button>
+    `;
+    row.style.flexWrap = 'wrap';
+    row.querySelector('.edit-num').value = e.episode_number;
+    row.querySelector('.edit-title').value = e.title || '';
+    row.querySelector('.edit-url').value = e.video_url;
+    row.querySelector('.save-btn').onclick = ()=>saveEpisodeEdit(seriesId, epId, row);
+    row.querySelector('.cancel-btn').onclick = ()=>loadEpisodes(seriesId);
+  }
+
+  async function saveEpisodeEdit(seriesId, epId, row){
+    const episode_number = parseInt(row.querySelector('.edit-num').value);
+    const title = row.querySelector('.edit-title').value.trim();
+    const video_url = row.querySelector('.edit-url').value.trim();
+    if(!episode_number || !video_url){ alert('Cần nhập số tập và link video.'); return; }
+    const { error } = await sb.from('episodes').update({ episode_number, title: title||null, video_url }).eq('id', epId);
+    if(error){ alert('Lỗi: ' + error.message); return; }
+    loadEpisodes(seriesId);
   }
 
   async function addEpisode(seriesId){
