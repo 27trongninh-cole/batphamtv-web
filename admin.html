@@ -247,6 +247,7 @@
   function showApp(){
     loginView.style.display='none';
     appView.style.display='block';
+    localStorage.setItem('bptv_skip_tracking', '1');
     loadSeriesList();
     loadStats();
   }
@@ -475,3 +476,4 @@
 </script>
 </body>
 </html>
+ 
