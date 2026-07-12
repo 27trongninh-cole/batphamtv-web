@@ -132,11 +132,29 @@
     position:relative;
     overflow:hidden;
   }
-  .scroll-cover img{width:100%;height:100%;object-fit:cover;}
+  .scroll-cover img, .scroll-cover video{width:100%;height:100%;object-fit:cover;}
   .scroll-cover .glyph{
     font-family:'Ma Shan Zheng',cursive;
     font-size:56px;
     color:rgba(237,230,214,0.15);
+  }
+  .title-ribbon{
+    position:absolute;
+    top:42%;left:50%;
+    transform:translate(-50%,-50%) rotate(-9deg);
+    width:145%;
+    background:linear-gradient(90deg, var(--vermillion), #8a2c26);
+    color:#fff;
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    padding:6px 4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    box-shadow:0 6px 14px rgba(0,0,0,0.45);
+    letter-spacing:0.3px;
+    z-index:1;
   }
   .status-badge{
     display:inline-flex;align-items:center;gap:6px;
@@ -201,37 +219,65 @@
   #player-view{display:none;}
   .back-btn{
     display:inline-flex;align-items:center;gap:6px;
-    background:none;border:none;color:var(--muted);
-    font-family:inherit;font-size:14px;cursor:pointer;
-    padding:8px 0;margin-bottom:20px;
+    background:none;border:1px solid var(--line);color:var(--muted);
+    font-family:inherit;font-size:13px;cursor:pointer;
+    padding:8px 16px;margin-bottom:24px;border-radius:100px;
+    transition:all .2s ease;
   }
-  .back-btn:hover{color:var(--parchment);}
+  .back-btn:hover{color:var(--parchment);border-color:var(--jade);}
 
+  .player-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  }
+
+  .player-header{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+    margin-bottom:16px;flex-wrap:wrap;
+  }
+  .player-heading .code-tag{
+    display:inline-block;font-size:11px;font-weight:700;color:var(--jade);
+    letter-spacing:0.5px;margin-bottom:4px;
+  }
   .player-title{
-    font-family:'Ma Shan Zheng',cursive;
-    font-size:32px;
+    font-family:'Dancing Script',cursive;
+    font-weight:700;
+    font-size:34px;
     color:var(--parchment);
-    margin-bottom:6px;
+    line-height:1.1;
   }
-  .player-desc{color:var(--muted);font-size:13px;margin-bottom:24px;max-width:640px;}
+  .player-desc{color:var(--muted);font-size:13px;margin-top:16px;max-width:640px;}
 
-  video{
+  #player-container{
+    border-radius:10px;
+    overflow:hidden;
+    background:#000;
+  }
+
+  video, iframe.player-frame{
+    display:block;
     width:100%;
     max-height:70vh;
+    aspect-ratio:16/9;
     background:#000;
-    border-radius:8px;
-    border:1px solid var(--line);
+    border:none;
   }
 
+  .ep-list-label{
+    font-size:12px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:0.8px;margin:22px 0 10px;
+  }
   .ep-list{
-    margin-top:24px;
-    display:flex;flex-wrap:wrap;gap:10px;
+    display:flex;flex-wrap:wrap;gap:8px;
   }
   .ep-pill{
     display:flex;align-items:center;gap:8px;
-    background:var(--card);
+    background:var(--bg-alt);
     border:1px solid var(--line);
-    padding:8px 14px;
+    padding:7px 14px 7px 7px;
     border-radius:100px;
     cursor:pointer;
     font-size:13px;
@@ -239,19 +285,21 @@
     transition:all .2s ease;
   }
   .ep-pill .num{
-    width:20px;height:20px;border-radius:50%;
+    width:22px;height:22px;border-radius:50%;
     background:var(--jade-soft);
     color:var(--parchment);
     font-size:11px;font-weight:700;
     display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
   }
-  .ep-pill:hover{border-color:var(--jade);color:var(--parchment);}
+  .ep-pill:hover{border-color:var(--jade);color:var(--parchment);transform:translateY(-1px);}
   .ep-pill.active{
     background:var(--jade-soft);
     border-color:var(--jade);
     color:#fff;
+    box-shadow:0 6px 16px rgba(63,156,118,0.35);
   }
-  .ep-pill.active .num{background:var(--vermillion);}
+  .ep-pill.active .num{background:var(--vermillion);color:#fff;}
 
   #toast{
     position:fixed;
@@ -308,11 +356,19 @@
 
   <div id="player-view">
     <button class="back-btn" onclick="backToLibrary()">← Quay lại danh sách</button>
-    <div class="player-title" id="player-title"></div>
-    <div class="player-status" id="player-status"></div>
-    <div class="player-desc" id="player-desc"></div>
-    <video id="video" controls playsinline></video>
-    <div class="ep-list" id="ep-list"></div>
+    <div class="player-panel">
+      <div class="player-header">
+        <div class="player-heading">
+          <div class="code-tag" id="player-code"></div>
+          <div class="player-title" id="player-title"></div>
+        </div>
+        <div class="player-status" id="player-status"></div>
+      </div>
+      <div class="player-desc" id="player-desc"></div>
+      <div id="player-container" style="margin-top:16px;"></div>
+      <div class="ep-list-label">Danh sách tập</div>
+      <div class="ep-list" id="ep-list"></div>
+    </div>
   </div>
 </main>
 
@@ -344,15 +400,24 @@
     }
     seriesData = series;
 
-    // lấy số tập cho từng series
-    const { data: episodes } = await sb.from('episodes').select('series_id');
+    // lấy toàn bộ tập để đếm số tập + lấy video tập 1 làm fallback thumbnail
+    const { data: episodes } = await sb.from('episodes').select('series_id, episode_number, video_url').order('episode_number', {ascending:true});
     countMap = {};
-    (episodes||[]).forEach(e=>{ countMap[e.series_id] = (countMap[e.series_id]||0)+1; });
+    firstEpUrlMap = {};
+    (episodes||[]).forEach(e=>{
+      countMap[e.series_id] = (countMap[e.series_id]||0)+1;
+      if(!(e.series_id in firstEpUrlMap)) firstEpUrlMap[e.series_id] = e.video_url;
+    });
 
     renderGrid(seriesData);
   }
 
   let countMap = {};
+  let firstEpUrlMap = {};
+
+  function isDirectVideoUrl(url){
+    return !!url && !url.includes('drive.google.com');
+  }
 
   const STATUS_LABEL = { done:'Đã xong', updating:'Đang cập nhật', stopped:'Ngưng cập nhật' };
   function statusBadgeHtml(status, extraClass){
@@ -369,20 +434,30 @@
       return;
     }
     noResults.style.display = 'none';
-    grid.innerHTML = list.map(s => `
+    grid.innerHTML = list.map(s => {
+      let coverHtml;
+      if(s.cover_url){
+        coverHtml = `<img src="${escapeAttr(s.cover_url)}" alt="">`;
+      } else if(isDirectVideoUrl(firstEpUrlMap[s.id])){
+        coverHtml = `<video src="${escapeAttr(firstEpUrlMap[s.id])}" muted preload="metadata" playsinline></video>`;
+      } else {
+        coverHtml = `<div class="glyph">卷</div>`;
+      }
+      return `
       <div class="scroll-card" onclick="openSeries('${s.id}')">
         <div class="scroll-cover">
-          ${s.cover_url ? `<img src="${escapeAttr(s.cover_url)}" alt="">` : `<div class="glyph">卷</div>`}
+          ${coverHtml}
+          <div class="title-ribbon">${escapeHtml(s.title)}</div>
           ${statusBadgeHtml(s.status, 'status-badge-pos')}
           <div class="ep-badge">${countMap[s.id]||0} tập</div>
         </div>
         <div class="scroll-info">
           ${s.code ? `<div class="code">${escapeHtml(s.code)}</div>` : ''}
-          <h3>${escapeHtml(s.title)}</h3>
           ${s.description ? `<p>${escapeHtml(s.description)}</p>` : ''}
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function removeDiacritics(str){
@@ -418,6 +493,7 @@
 
     document.getElementById('library-view').style.display='none';
     document.getElementById('player-view').style.display='block';
+    document.getElementById('player-code').textContent = s.code || '';
     document.getElementById('player-title').textContent = s.title;
     document.getElementById('player-status').innerHTML = statusBadgeHtml(s.status);
     document.getElementById('player-desc').textContent = s.description || '';
@@ -434,18 +510,32 @@
     window.scrollTo({top:0, behavior:'smooth'});
   }
 
+  function renderPlayer(url){
+    const container = document.getElementById('player-container');
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if(driveMatch){
+      const fileId = driveMatch[1];
+      container.innerHTML = `<iframe class="player-frame" src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay" allowfullscreen frameborder="0"></iframe>`;
+    } else {
+      container.innerHTML = `<video id="video" controls playsinline autoplay></video>`;
+      const video = document.getElementById('video');
+      video.src = url;
+      video.play().catch(()=>{});
+    }
+  }
+
   function playEpisode(episodes, idx){
     const e = episodes[idx];
-    const video = document.getElementById('video');
-    video.src = e.video_url;
-    video.play().catch(()=>{});
+    renderPlayer(e.video_url);
     document.querySelectorAll('.ep-pill').forEach((el,i)=>{
       el.classList.toggle('active', i===idx);
     });
   }
 
   function backToLibrary(){
-    document.getElementById('video').pause();
+    const video = document.getElementById('video');
+    if(video) video.pause();
+    document.getElementById('player-container').innerHTML = '';
     document.getElementById('player-view').style.display='none';
     document.getElementById('library-view').style.display='block';
   }
