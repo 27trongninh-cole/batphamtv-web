@@ -66,6 +66,15 @@
     letter-spacing:0.4px;
   }
   label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
+  .checkbox-label{
+    display:flex;align-items:center;gap:8px;
+    font-size:13px;color:var(--parchment);
+    cursor:pointer;
+  }
+  .checkbox-label input[type="checkbox"]{
+    width:16px;height:16px;accent-color:#d4af37;cursor:pointer;
+  }
+  .featured-toggle-row{margin-bottom:6px;}
 
   /* Login */
   #login-view{
@@ -191,6 +200,23 @@
         <option value="stopped">🔴 Ngưng cập nhật</option>
       </select>
     </div>
+    <div class="form-row full featured-toggle-row">
+      <label class="checkbox-label">
+        <input type="checkbox" id="new-series-featured" onchange="toggleFeaturedFields('new')">
+        <span>⭐ Phim đặc biệt (có tác giả gốc)</span>
+      </label>
+    </div>
+    <div id="new-featured-fields" style="display:none;">
+      <div class="form-row full">
+        <input type="text" id="new-series-author" placeholder="Tên tác giả gốc">
+      </div>
+      <div class="form-row full">
+        <select id="new-series-platform">
+          <option value="xiaohongshu">Xiaohongshu (Tiểu Hồng Thư)</option>
+          <option value="bilibili">Bilibili</option>
+        </select>
+      </div>
+    </div>
     <button class="primary" onclick="addSeries()">+ Thêm bộ phim</button>
     <div class="status-msg" id="series-status"></div>
   </div>
@@ -279,19 +305,34 @@
     return 'BP' + String(lastNum+1).padStart(3,'0');
   }
 
+  function toggleFeaturedFields(prefix){
+    const checked = document.getElementById(prefix+'-series-featured').checked;
+    document.getElementById(prefix+'-featured-fields').style.display = checked ? 'block' : 'none';
+  }
+
   async function addSeries(){
     const title = document.getElementById('new-series-title').value.trim();
     const description = document.getElementById('new-series-desc').value.trim();
     const cover_url = document.getElementById('new-series-cover').value.trim();
     const status = document.getElementById('new-series-status').value;
+    const is_featured = document.getElementById('new-series-featured').checked;
+    const author_name = is_featured ? document.getElementById('new-series-author').value.trim() : null;
+    const author_platform = is_featured ? document.getElementById('new-series-platform').value : null;
     if(!title){ alert('Cần nhập tên bộ phim.'); return; }
+    if(is_featured && !author_name){ alert('Đã bật "Phim đặc biệt" thì cần nhập tên tác giả gốc.'); return; }
     const code = await generateNextCode();
-    const { error } = await sb.from('series').insert({ title, description: description||null, cover_url: cover_url||null, code, status });
+    const { error } = await sb.from('series').insert({
+      title, description: description||null, cover_url: cover_url||null, code, status,
+      is_featured, author_name: author_name||null, author_platform: author_platform||null
+    });
     if(error){ alert('Lỗi: ' + error.message); return; }
     document.getElementById('new-series-title').value='';
     document.getElementById('new-series-desc').value='';
     document.getElementById('new-series-cover').value='';
     document.getElementById('new-series-status').value='updating';
+    document.getElementById('new-series-featured').checked=false;
+    document.getElementById('new-series-author').value='';
+    document.getElementById('new-featured-fields').style.display='none';
     const statusEl = document.getElementById('series-status');
     statusEl.textContent = 'Đã thêm!';
     statusEl.style.display='block';
@@ -341,9 +382,12 @@
   }
 
   function seriesHeadHtml(s){
+    const featuredBadge = s.is_featured
+      ? `<span style="display:inline-flex;align-items:center;gap:3px;color:#d4af37;font-size:11px;font-weight:700;margin-left:6px;">⭐ ${s.author_name ? escapeHtml(s.author_name) : 'Tác giả gốc'}</span>`
+      : '';
     return `
       <div style="flex:1;">
-        <h3>${s.code ? `<span style="color:var(--jade);font-size:12px;margin-right:6px;">${escapeHtml(s.code)}</span>` : ''}${escapeHtml(s.title)}</h3>
+        <h3>${s.code ? `<span style="color:var(--jade);font-size:12px;margin-right:6px;">${escapeHtml(s.code)}</span>` : ''}${escapeHtml(s.title)}${featuredBadge}</h3>
         ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ''}
         <select class="status-select status-${s.status||'updating'}" onchange="updateStatus('${s.id}', this.value)">
           <option value="updating" ${s.status==='updating'?'selected':''}>🟡 Đang cập nhật</option>
@@ -367,6 +411,17 @@
         <input type="text" class="edit-title" placeholder="Tên bộ phim">
         <input type="text" class="edit-desc" placeholder="Mô tả ngắn">
         <input type="text" class="edit-cover" placeholder="Link ảnh bìa">
+        <label class="checkbox-label">
+          <input type="checkbox" class="edit-featured">
+          <span>⭐ Phim đặc biệt (có tác giả gốc)</span>
+        </label>
+        <div class="edit-featured-fields" style="display:none;flex-direction:column;gap:8px;">
+          <input type="text" class="edit-author" placeholder="Tên tác giả gốc">
+          <select class="edit-platform">
+            <option value="xiaohongshu">Xiaohongshu (Tiểu Hồng Thư)</option>
+            <option value="bilibili">Bilibili</option>
+          </select>
+        </div>
         <div style="display:flex;gap:8px;">
           <button class="save-btn" style="background:var(--jade-soft);color:#fff;padding:8px 16px;border-radius:6px;">Lưu</button>
           <button class="cancel-btn" style="background:none;color:var(--muted);border:1px solid var(--line);padding:8px 16px;border-radius:6px;">Hủy</button>
@@ -376,6 +431,13 @@
     head.querySelector('.edit-title').value = s.title || '';
     head.querySelector('.edit-desc').value = s.description || '';
     head.querySelector('.edit-cover').value = s.cover_url || '';
+    const featuredCheckbox = head.querySelector('.edit-featured');
+    const featuredFields = head.querySelector('.edit-featured-fields');
+    featuredCheckbox.checked = !!s.is_featured;
+    featuredFields.style.display = s.is_featured ? 'flex' : 'none';
+    head.querySelector('.edit-author').value = s.author_name || '';
+    head.querySelector('.edit-platform').value = s.author_platform || 'xiaohongshu';
+    featuredCheckbox.onchange = ()=>{ featuredFields.style.display = featuredCheckbox.checked ? 'flex' : 'none'; };
     head.querySelector('.save-btn').onclick = ()=>saveSeriesEdit(seriesId, head);
     head.querySelector('.cancel-btn').onclick = ()=>loadSeriesList();
   }
@@ -384,8 +446,15 @@
     const title = head.querySelector('.edit-title').value.trim();
     const description = head.querySelector('.edit-desc').value.trim();
     const cover_url = head.querySelector('.edit-cover').value.trim();
+    const is_featured = head.querySelector('.edit-featured').checked;
+    const author_name = is_featured ? head.querySelector('.edit-author').value.trim() : null;
+    const author_platform = is_featured ? head.querySelector('.edit-platform').value : null;
     if(!title){ alert('Cần nhập tên bộ phim.'); return; }
-    const { error } = await sb.from('series').update({ title, description: description||null, cover_url: cover_url||null }).eq('id', seriesId);
+    if(is_featured && !author_name){ alert('Đã bật "Phim đặc biệt" thì cần nhập tên tác giả gốc.'); return; }
+    const { error } = await sb.from('series').update({
+      title, description: description||null, cover_url: cover_url||null,
+      is_featured, author_name: author_name||null, author_platform: author_platform||null
+    }).eq('id', seriesId);
     if(error){ alert('Lỗi: ' + error.message); return; }
     loadSeriesList();
   }
@@ -476,4 +545,3 @@
 </script>
 </body>
 </html>
- 
