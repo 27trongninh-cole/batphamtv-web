@@ -257,28 +257,28 @@
     border-color:var(--jade-soft);
   }
   .scroll-card.featured{
-    border:none;
-    overflow:visible;
-    z-index:0;
+    border:1.5px solid rgba(212,175,55,0.75);
+    box-shadow:0 0 0 1px rgba(212,175,55,0.25), 0 0 18px rgba(212,175,55,0.18), 0 10px 24px rgba(0,0,0,0.35);
   }
-  .scroll-card.featured::before{
-    content:"";
-    position:absolute;
-    inset:-3px;
-    z-index:-1;
-    border-radius:9px;
-    background:conic-gradient(from 0deg, #ff3b3b, #ff9d3b, #ffe33b, #4ade80, #3bc9ff, #6a5bff, #ff3bd4, #ff3b3b);
-    filter:blur(9px);
-    opacity:0.85;
-    animation:featured-spin 4s linear infinite;
+  .scroll-card.featured:hover{
+    border-color:#d4af37;
+    box-shadow:0 0 0 1px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.3), 0 16px 32px rgba(0,0,0,0.45);
   }
-  .scroll-card.featured:hover::before{
-    filter:blur(12px);
-    opacity:1;
+  .scroll-card.featured.platform-xiaohongshu{
+    border-color:rgba(224,82,77,0.8);
+    box-shadow:0 0 0 1px rgba(224,82,77,0.28), 0 0 18px rgba(224,82,77,0.22), 0 10px 24px rgba(0,0,0,0.35);
   }
-  @keyframes featured-spin{
-    from{transform:rotate(0deg);}
-    to{transform:rotate(360deg);}
+  .scroll-card.featured.platform-xiaohongshu:hover{
+    border-color:#e0524d;
+    box-shadow:0 0 0 1px rgba(224,82,77,0.45), 0 0 26px rgba(224,82,77,0.4), 0 16px 32px rgba(0,0,0,0.45);
+  }
+  .scroll-card.featured.platform-bilibili{
+    border-color:rgba(79,179,232,0.8);
+    box-shadow:0 0 0 1px rgba(79,179,232,0.28), 0 0 18px rgba(79,179,232,0.22), 0 10px 24px rgba(0,0,0,0.35);
+  }
+  .scroll-card.featured.platform-bilibili:hover{
+    border-color:#4fb3e8;
+    box-shadow:0 0 0 1px rgba(79,179,232,0.45), 0 0 26px rgba(79,179,232,0.4), 0 16px 32px rgba(0,0,0,0.45);
   }
   .credit-line{
     display:flex;align-items:center;gap:5px;
@@ -343,7 +343,6 @@
   @keyframes pulse-glow{0%,100%{opacity:1;}50%{opacity:0.35;}}
   @media (prefers-reduced-motion:reduce){
     .status-badge .dot{animation:none;}
-    .scroll-card.featured::before{animation:none;}
   }
   .status-badge-pos{position:absolute;top:8px;left:8px;}
 
@@ -744,7 +743,7 @@
         coverHtml = `<div class="glyph">卷</div>`;
       }
       return `
-      <div class="scroll-card${s.is_featured ? ' featured' : ''}" onclick="openSeries('${s.id}')">
+      <div class="scroll-card${s.is_featured ? ' featured platform-' + (s.author_platform || 'gold') : ''}" onclick="openSeries('${s.id}')">
         <div class="scroll-cover">
           ${coverHtml}
           <div class="title-ribbon">${escapeHtml(s.title)}</div>
